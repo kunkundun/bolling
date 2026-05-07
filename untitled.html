@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KUN Crypto Dashboard Pro | 多周期信号 + 声音提醒</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js">
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #0f172a;
+            --sub-text: #64748b;
+            --border-color: #e2e8f0;
+            --input-bg: #ffffff;
+            --chart-bg: #ffffff;
+            --active-color: #3b82f6;
+            --btn-text: #0f172a;
+            --btn-border: #0f172a;
+            --grid-line: rgba(42, 46, 57, 0.06);
+            --table-head-bg: #f1f5f9;
+            --alert-bg: #ffffff;
+            --alert-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --alert-border: #e2e8f0;
+            --badge-long-bg: rgba(16, 185, 129, 0.12);
+            --badge-short-bg: rgba(239, 68, 68, 0.12);
+            --dropdown-bg: #ffffff;
+            --dropdown-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --drawer-bg: #ffffff;
+            --drawer-border: #e2e8f0;
+        }
+
+        body.dark-mode {
+            --bg-color: #0f1318;
+            --card-bg: #1a1e27;
+            --text-color: #ffffff;
+            --sub-text: #9ca3af;
+            --border-color: #2a2e39;
+            --input-bg: #0f1318;
+            --chart-bg: #1a1e27;
+            --btn-text: #ffffff;
+            --btn-border: #ffffff;
+            --grid-line: rgba(240, 240, 240, 0.05);
+            --table-head-bg: #2a2e39;
+            --alert-bg: #1a1e27;
+            --alert-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+            --alert-border: #2a2e39;
+            --badge-long-bg: rgba(16, 185, 129, 0.18);
+            --badge-short-bg: rgba(239, 68, 68, 0.18);
+            --dropdown-bg: #1e293b;
+            --dropdown-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            --drawer-bg: #1e293b;
+            --drawer-border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .text-up { color: #10b981 !important; }
+        .text-down { color: #ef4444 !important; }
+        .text-neutral { color: var(--sub-text) !important; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+            width: 100%;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+        .logo-section { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 36px; font-weight: bold; background: linear-gradient(135deg, #fbbf24, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Georgia', serif; letter-spacing: 2px; }
+        .subtitle { font-size: 12px; color: var(--sub-text); margin-top: 4px; }
+        .price-section { display: flex; align-items: flex-start; gap: 15px; position: relative; }
+        .info-grid { display: grid; grid-template-columns: auto auto; column-gap: 40px; row-gap: 4px; text-align: right; }
+        .label-row { font-size: 12px; color: var(--sub-text); font-weight: bold; display: flex; align-items: center; justify-content: flex-end; height: 20px; }
+        .value-row { font-size: 24px; font-weight: bold; font-family: 'Arial', sans-serif; display: flex; align-items: center; justify-content: flex-end; height: 32px; }
+        .value-row.funding-color { color: var(--text-color); font-family: 'Courier New', monospace; }
+        .sub-row { font-size: 13px; font-weight: bold; display: flex; align-items: center; justify-content: flex-end; height: 20px; }
+
+        /* 设置下拉菜单 */
+        .settings-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .settings-btn {
+            background: transparent;
+            border: 2px solid var(--btn-border);
+            color: var(--btn-text);
+            padding: 0;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.2s;
+            background-color: var(--card-bg);
+        }
+        .settings-btn:hover {
+            background-color: var(--border-color);
+            transform: rotate(15deg);
+        }
+        .dropdown-content {
+            position: absolute;
+            right: 0;
+            top: 48px;
+            background-color: var(--dropdown-bg);
+            min-width: 180px;
+            border-radius: 12px;
+            box-shadow: var(--dropdown-shadow);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .dropdown-content.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-color);
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+            position: relative; /* 为抽屉定位 */
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .dropdown-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        .toggle-switch {
+            width: 40px;
+            height: 20px;
+            background-color: #475569;
+            border-radius: 20px;
+            display: inline-block;
+            position: relative;
+            transition: 0.2s;
+        }
+        .toggle-switch.active {
+            background-color: #10b981;
+        }
+        .toggle-switch::after {
+            content: "";
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+        .theme-icon {
+            font-size: 18px;
+            margin-right: 8px;
+        }
+
+        /* === 周期提醒抽屉（位于菜单项右侧，平铺展开） === */
+        .drawer-overlay {
+            position: absolute;
+            left: 100%;
+            top: 0;
+            margin-left: 10px;
+            background: transparent;
+            z-index: 102;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .drawer-overlay.open {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .drawer {
+            background-color: var(--drawer-bg);
+            border: 1px solid var(--drawer-border);
+            border-radius: 12px;
+            box-shadow: var(--dropdown-shadow);
+            padding: 16px;
+            min-width: 220px;
+            /* 移除高度限制，让内容完全展开 */
+            max-height: none;
+            overflow-y: visible;
+            display: flex;
+            flex-direction: column;
+        }
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .drawer-close {
+            cursor: pointer;
+            font-size: 20px;
+            background: none;
+            border: none;
+            color: var(--text-color);
+        }
+        .period-reminder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .period-reminder-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .period-reminder-item:last-child {
+            border-bottom: none;
+        }
+        .period-label {
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .period-toggle {
+            width: 44px;
+            height: 24px;
+            background-color: #475569;
+            border-radius: 999px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .period-toggle.active {
+            background-color: #10b981;
+        }
+        .period-toggle::after {
+            content: "";
+            width: 18px;
+            height: 18px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s;
+        }
+        .period-toggle.active::after {
+            transform: translateX(20px);
+        }
+
+        /* 提醒面板 */
+        .alert-panel {
+            background-color: var(--alert-bg);
+            border: 1px solid var(--alert-border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            box-shadow: var(--alert-shadow);
+            transition: all 0.3s;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .alert-panel.empty {
+            justify-content: center;
+            align-items: center;
+            padding: 24px 16px;
+        }
+        .alert-empty-text {
+            color: var(--sub-text);
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-empty-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--active-color);
+            opacity: 0.6;
+            animation: pulse-dot 1.8s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        .alert-card-row {
+            background-color: var(--chart-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 18px;
+            transition: all 0.2s;
+            animation: alertSlideIn 0.3s ease-out;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        @keyframes alertSlideIn {
+            from { opacity: 0; transform: translateX(-12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .alert-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .alert-badge-tf {
+            background-color: var(--active-color);
+            color: white;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 24px;
+            white-space: nowrap;
+        }
+        .alert-type-icon {
+            font-weight: 700;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: rgba(59,130,246,0.12);
+            color: var(--text-color);
+        }
+        .alert-type-icon.enter-long { background-color: rgba(16,185,129,0.18); color: #10b981; }
+        .alert-type-icon.enter-short { background-color: rgba(239,68,68,0.18); color: #ef4444; }
+        .alert-type-icon.exit-long, .alert-type-icon.exit-short { background-color: rgba(100,116,139,0.15); color: var(--sub-text); }
+        .alert-details {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 16px;
+            row-gap: 6px;
+        }
+        .detail-item {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 4px;
+            background: var(--bg-color);
+            padding: 2px 10px;
+            border-radius: 20px;
+        }
+        .detail-label {
+            color: var(--sub-text);
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .detail-value {
+            color: var(--text-color);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .profit-badge {
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 24px;
+            background-color: rgba(16,185,129,0.12);
+        }
+        .profit-badge.profit-positive { color: #10b981; background-color: rgba(16,185,129,0.18); }
+        .profit-badge.profit-negative { color: #ef4444; background-color: rgba(239,68,68,0.18); }
+        .alert-time-small {
+            font-size: 10px;
+            color: var(--sub-text);
+            white-space: nowrap;
+        }
+
+        .chart-container {
+            background-color: var(--chart-bg);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            overflow: hidden;
+        }
+        .chart-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .symbol-select { background-color: var(--input-bg); border: 1px solid var(--border-color); border-radius: 4px; padding: 6px 28px 6px 10px; color: var(--text-color); font-size: 14px; font-weight: 500; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; background-size: 10px; min-width: 130px; }
+        .symbol-name { font-size: 20px; font-weight: bold; }
+        .timeframe { font-size: 14px; color: var(--sub-text); }
+        #tvChart { width: 100%; height: 550px; }
+        .bollinger-title { font-size: 20px; font-weight: bold; color: var(--active-color); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+        .title-bar { width: 4px; height: 24px; background-color: var(--active-color); border-radius: 2px; }
+        .bollinger-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+        }
+        .bollinger-card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .bollinger-card.active {
+            border-color: #4ade80;
+            box-shadow: 0 0 0 1px #4ade80, 0 4px 6px -1px rgba(74, 222, 128, 0.2);
+            transform: translateY(-2px);
+        }
+        .bollinger-card:hover { border-color: var(--active-color); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .period { font-weight: 500; }
+        .status.squeeze { background-color: rgba(234, 179, 8, 0.2); color: #facc15; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .status.hold { background-color: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+        .percentage-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        .progress-bar { width: 100%; height: 8px; background-color: var(--bg-color); border-radius: 9999px; overflow: hidden; margin-bottom: 12px; }
+        .progress-fill { height: 100%; transition: width 0.3s; }
+        .band-values { font-size: 11px; }
+        .band-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .band-label.upper { color: #ef4444; }
+        .band-label.lower { color: #10b981; }
+        .width-info { margin-top: 8px; font-size: 11px; color: var(--sub-text); }
+        .strategy-container { margin-top: 32px; background-color: var(--card-bg); border-radius: 8px; padding: 24px; border: 1px solid var(--border-color); }
+        .table-wrapper { overflow-x: auto; }
+        .log-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+        .log-table th { text-align: left; padding: 12px; background-color: var(--table-head-bg); color: var(--sub-text); font-weight: 600; text-transform: uppercase; font-size: 11px; }
+        .log-table td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; text-transform: uppercase; }
+        .badge.long { background-color: #10b981; }
+        .badge.short { background-color: #ef4444; }
+        .roi-val.positive { color: #10b981; }
+        .roi-val.negative { color: #ef4444; }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .header { flex-direction: column; }
+            .bollinger-grid { grid-template-columns: repeat(2, 1fr); }
+            #tvChart { height: 350px; min-width: 750px; }
+            .alert-card-row { flex-direction: column; align-items: flex-start; }
+            .alert-left { width: 100%; }
+            .alert-details { width: 100%; justify-content: space-between; }
+        }
+        @media (min-width: 769px) and (max-width: 1200px) {
+            .bollinger-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        .audio-permission-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: var(--active-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 12px;
+            z-index: 200;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo-section"><div><div class="logo">KUN</div><div class="subtitle">PROFESSIONAL CRYPTO CLUB</div></div></div>
+        <div class="price-section">
+            <div class="info-grid">
+                <div class="label-row">PRICE</div><div class="label-row">FUNDING (8H)</div>
+                <div class="value-row" id="currentPrice">$0.00</div><div class="value-row funding-color" id="fundingRate">0.0000%</div>
+                <div class="sub-row" id="priceChange">0.00% (UTC)</div><div class="sub-row neutral">Binance Futures</div>
+            </div>
+            <div class="settings-dropdown">
+                <button class="settings-btn" id="settingsBtn">⚙️</button>
+                <div class="dropdown-content" id="dropdownMenu">
+                    <div class="dropdown-item" id="themeDropdownItem">
+                        <span><span class="theme-icon">🌓</span> 暗色模式</span>
+                        <span id="themeToggleStatus">🌙</span>
+                    </div>
+                    <div class="dropdown-item" id="soundToggleItem">
+                        <span>🔊 声音提醒</span>
+                        <div class="toggle-switch" id="soundToggleSwitch"></div>
+                    </div>
+                    <div class="dropdown-item" id="periodReminderItem">
+                        <span>📋 周期提醒设置</span>
+                        <span>▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert-panel empty" id="alertPanel">
+        <div class="alert-empty-text"><span class="alert-empty-dot"></span> 等待多周期信号 (K线收盘确认) ...</div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-header">
+            <select id="symbolSelect" class="symbol-select"></select>
+            <div style="flex-grow:1; display:flex; align-items:center; gap:10px;"><span class="symbol-name" id="symbolName">BTCUSDT</span><span class="timeframe" id="displayTimeframe">1h</span></div>
+        </div>
+        <div class="chart-scroll-wrapper"><div id="tvChart"></div></div>
+    </div>
+
+    <div class="bollinger-title"><div class="title-bar"></div>BOLLINGER ANALYTICS</div>
+    <div class="bollinger-grid" id="bollingerGrid"></div>
+
+    <div class="strategy-container">
+        <div class="log-title"><span style="font-size:20px;">📄</span> VISIBLE RANGE SIGNALS · 当前周期: <span id="logTimeframeLabel">1h</span></div>
+        <div class="table-wrapper">
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>Time (Beijing)</th>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Entry</th>
+                        <th>Exit</th>
+                        <th>SL Price</th>
+                        <th>ROI</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="strategyLogBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 抽屉面板（将在JS中移到periodReminderItem内部） -->
+<div id="drawerOverlay" class="drawer-overlay">
+    <div class="drawer">
+        <div class="drawer-header">
+            <span>⏰ 周期提醒开关</span>
+            <button class="drawer-close" id="drawerCloseBtn">✕</button>
+        </div>
+        <div class="period-reminder-list" id="periodReminderList"></div>
+        <div style="margin-top: 20px; font-size: 12px; color: var(--sub-text); text-align: center;">关闭后该周期信号不再提醒</div>
+    </div>
+</div>
+
+<div id="audioToast" class="audio-permission-toast">🔊 点击页面任意位置启用声音提醒</div>
+
+<script>
+    // ---------- 全局配置 ----------
+    const TIMEFRAMES = ['5m', '15m', '1h', '2h', '4h', '12h', '1d', '1w'];
+    const BOLLINGER_TFS = ['5m', '15m', '30m', '1h', '2h', '4h', '8h', '12h', '1d', '1w'];
+    let currentSymbol = 'BTCUSDT';
+    let currentTimeframe = '1h';
+    let isLightMode = true;
+    let chart, candleSeries, upperSeries, lowerSeries, middleSeries, ma60Series;
+
+    let periodActionsMap = new Map();
+    let allActionsCache = [];
+    let refreshing = false;
+
+    // 周期提醒开关状态 (默认全部 true)
+    let periodReminderEnabled = {};
+    function loadPeriodReminderSettings() {
+        const saved = localStorage.getItem('kun_period_reminder');
+        if (saved) {
+            try {
+                const obj = JSON.parse(saved);
+                TIMEFRAMES.forEach(tf => { periodReminderEnabled[tf] = obj[tf] !== undefined ? obj[tf] : true; });
+            } catch(e) { initDefaultReminder(); }
+        } else {
+            initDefaultReminder();
+        }
+        TIMEFRAMES.forEach(tf => { if (periodReminderEnabled[tf] === undefined) periodReminderEnabled[tf] = true; });
+        savePeriodReminderSettings();
+    }
+    function initDefaultReminder() { TIMEFRAMES.forEach(tf => { periodReminderEnabled[tf] = true; }); }
+    function savePeriodReminderSettings() { localStorage.setItem('kun_period_reminder', JSON.stringify(periodReminderEnabled)); }
+    function setPeriodReminder(tf, enabled) {
+        periodReminderEnabled[tf] = enabled;
+        savePeriodReminderSettings();
+        buildPeriodReminderUI();
+        updateFilteredAlerts();
+    }
+    
+    function buildPeriodReminderUI() {
+        const container = document.getElementById('periodReminderList');
+        if (!container) return;
+        container.innerHTML = '';
+        TIMEFRAMES.forEach(tf => {
+            const div = document.createElement('div');
+            div.className = 'period-reminder-item';
+            div.innerHTML = `<span class="period-label">${tf}</span><div class="period-toggle ${periodReminderEnabled[tf] ? 'active' : ''}" data-tf="${tf}"></div>`;
+            div.querySelector('.period-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const newState = !periodReminderEnabled[tf];
+                setPeriodReminder(tf, newState);
+            });
+            container.appendChild(div);
+        });
+    }
+    
+    function getFilteredActions() {
+        return allActionsCache.filter(act => periodReminderEnabled[act.timeframe] === true);
+    }
+    
+    let prevAlertKeys = new Set();
+    function updateFilteredAlerts() {
+        const filtered = getFilteredActions().slice(0, 3);
+        updateAlertPanel(filtered);
+    }
+    
+    // 声音提醒
+    let soundEnabled = true;
+    let audioCtx = null;
+    let userInteracted = false;
+    
+    function initAudioOnUserInteraction() {
+        if (userInteracted) return;
+        userInteracted = true;
+        const toast = document.getElementById('audioToast');
+        if (toast) toast.style.opacity = '0';
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.suspend();
+        } catch(e) { console.warn("Web Audio 不支持"); }
+    }
+
+    async function playNotificationBeep() {
+        if (!soundEnabled) return;
+        if (!userInteracted) {
+            const toast = document.getElementById('audioToast');
+            if (toast) toast.style.opacity = '1';
+            setTimeout(() => { if(toast) toast.style.opacity = '0'; }, 2000);
+            return;
+        }
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            const now = audioCtx.currentTime;
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.frequency.value = 1200;
+            gain1.gain.value = 0.35;
+            osc1.start();
+            gain1.gain.exponentialRampToValueAtTime(0.00001, now + 0.45);
+            osc1.stop(now + 0.45);
+            setTimeout(() => {
+                if (!audioCtx || audioCtx.state !== 'running') return;
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.frequency.value = 880;
+                gain2.gain.value = 0.3;
+                osc2.start();
+                gain2.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.4);
+                osc2.stop(audioCtx.currentTime + 0.4);
+            }, 180);
+        } catch(e) { console.warn("播放声音失败", e); }
+    }
+
+    document.body.addEventListener('click', () => { if (!userInteracted) initAudioOnUserInteraction(); }, { once: false });
+    document.body.addEventListener('touchstart', () => { if (!userInteracted) initAudioOnUserInteraction(); });
+
+    function saveSoundState() { localStorage.setItem('kun_sound_enabled', soundEnabled ? 'true' : 'false'); updateSoundToggleUI(); }
+    function loadSoundState() { const saved = localStorage.getItem('kun_sound_enabled'); if (saved !== null) soundEnabled = saved === 'true'; else soundEnabled = true; updateSoundToggleUI(); }
+    function updateSoundToggleUI() { const toggleDiv = document.getElementById('soundToggleSwitch'); if (toggleDiv) { if (soundEnabled) toggleDiv.classList.add('active'); else toggleDiv.classList.remove('active'); } }
+    function toggleSound() { soundEnabled = !soundEnabled; saveSoundState(); if (soundEnabled && !userInteracted) { const toast = document.getElementById('audioToast'); if (toast) toast.style.opacity = '1'; setTimeout(() => { if(toast) toast.style.opacity = '0'; }, 2000); } }
+
+    // 主题
+    function updateThemeUI() {
+        if(isLightMode) document.body.classList.remove('dark-mode');
+        else document.body.classList.add('dark-mode');
+        const themeBtnStatus = document.getElementById('themeToggleStatus');
+        if(themeBtnStatus) themeBtnStatus.innerText = isLightMode ? '☀️' : '🌙';
+        if(chart){
+            let bg=isLightMode?'#ffffff':'#1a1e27';
+            let txt=isLightMode?'#111827':'#d1d5db';
+            let grid=isLightMode?'rgba(42,46,57,0.06)':'rgba(240,240,240,0.05)';
+            let border=isLightMode?'rgba(229,231,235,1)':'#2a2e39';
+            chart.applyOptions({layout:{background:{color:bg},textColor:txt},grid:{vertLines:{color:grid},horzLines:{color:grid}},rightPriceScale:{borderColor:border},timeScale:{borderColor:border}});
+        }
+    }
+    function toggleTheme() { isLightMode = !isLightMode; updateThemeUI(); localStorage.setItem('kun_theme_mode', isLightMode ? 'light' : 'dark'); }
+    function loadTheme() { const saved = localStorage.getItem('kun_theme_mode'); if(saved === 'dark') isLightMode = false; else if(saved === 'light') isLightMode = true; else isLightMode = true; updateThemeUI(); }
+
+    // 下拉菜单 & 抽屉控制
+    let dropdownOpen = false;
+    function setupDropdown() {
+        const btn = document.getElementById('settingsBtn');
+        const menu = document.getElementById('dropdownMenu');
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        if(!btn || !menu) return;
+        
+        btn.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            dropdownOpen = !dropdownOpen; 
+            if(dropdownOpen) menu.classList.add('show'); 
+            else menu.classList.remove('show'); 
+        });
+        
+        // 全局点击关闭菜单和抽屉（点击抽屉内部不关闭）
+        document.addEventListener('click', (e) => { 
+            if (!btn.contains(e.target) && !menu.contains(e.target) && !drawerOverlay.contains(e.target)) { 
+                dropdownOpen = false; 
+                menu.classList.remove('show'); 
+                if (drawerOverlay) drawerOverlay.classList.remove('open'); 
+            } 
+        });
+        
+        const themeItem = document.getElementById('themeDropdownItem');
+        if(themeItem) themeItem.addEventListener('click', (e) => { e.stopPropagation(); toggleTheme(); dropdownOpen=false; menu.classList.remove('show'); });
+        
+        const soundItem = document.getElementById('soundToggleItem');
+        if(soundItem) soundItem.addEventListener('click', (e) => { e.stopPropagation(); toggleSound(); });
+        
+        const periodItem = document.getElementById('periodReminderItem');
+        if(periodItem) {
+            periodItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 切换附加的抽屉面板
+                if (drawerOverlay) {
+                    drawerOverlay.classList.toggle('open');
+                }
+            });
+        }
+        
+        const closeBtn = document.getElementById('drawerCloseBtn');
+        if(closeBtn) closeBtn.addEventListener('click', () => {
+            if (drawerOverlay) drawerOverlay.classList.remove('open');
+        });
+    }
+
+    function formatBeijingTime(timestamp) {
+        let d = new Date(timestamp * 1000);
+        let beijingOffset = 8 * 60;
+        let localOffset = d.getTimezoneOffset();
+        let beijingTime = new Date(d.getTime() + (beijingOffset + localOffset) * 60000);
+        return `${beijingTime.getMonth()+1}/${beijingTime.getDate()} ${beijingTime.getHours().toString().padStart(2,'0')}:${beijingTime.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    // 核心策略 (基于收盘K线)
+    function generateEventStreamFromClosedKlines(klines, timeframe) {
+        if (!klines || klines.length < 30) return [];
+        const closedKlines = klines.slice(0, -1);
+        if (closedKlines.length < 30) return [];
+        
+        let bollingerValues = [];
+        let closes = closedKlines.map(k => k.close);
+        for (let i = 0; i < closedKlines.length; i++) {
+            if (i >= 19) {
+                let slice = closes.slice(i-19, i+1);
+                let sma = slice.reduce((a,b)=>a+b,0)/20;
+                let variance = slice.reduce((s,v)=>s+Math.pow(v-sma,2),0)/20;
+                let std = Math.sqrt(variance);
+                bollingerValues.push({
+                    upper: sma + std*2,
+                    lower: sma - std*2,
+                    middle: sma,
+                    close: closedKlines[i].close,
+                    high: closedKlines[i].high,
+                    low: closedKlines[i].low,
+                    time: closedKlines[i].time
+                });
+            } else bollingerValues.push(null);
+        }
+        let events = [], position = null;
+        for (let i = 1; i < bollingerValues.length; i++) {
+            const curr = bollingerValues[i];
+            const prev = bollingerValues[i-1];
+            if (!curr || !prev) continue;
+            if (!position) {
+                let crossOverLower = (prev.close <= prev.lower) && (curr.close > curr.lower);
+                let crossUnderUpper = (prev.close >= prev.upper) && (curr.close < curr.upper);
+                if (crossOverLower) {
+                    let entryPrice = (i+1 < closedKlines.length) ? closedKlines[i+1].open : curr.close;
+                    let slPrice = entryPrice * 0.985;
+                    events.push({ time: curr.time, timeframe, type: 'ENTER', direction: 'LONG', entryPrice, slPrice });
+                    position = { type: 'LONG', entryPrice, slPrice, entryIndex: i };
+                } else if (crossUnderUpper) {
+                    let entryPrice = (i+1 < closedKlines.length) ? closedKlines[i+1].open : curr.close;
+                    let slPrice = entryPrice * 1.015;
+                    events.push({ time: curr.time, timeframe, type: 'ENTER', direction: 'SHORT', entryPrice, slPrice });
+                    position = { type: 'SHORT', entryPrice, slPrice, entryIndex: i };
+                }
+            } else {
+                let isExit = false, exitPrice = 0, roi = 0;
+                if (position.type === 'LONG') {
+                    if (curr.low <= position.slPrice) { isExit = true; exitPrice = position.slPrice; roi = ((exitPrice - position.entryPrice) / position.entryPrice) * 100; }
+                    else if (curr.close >= curr.middle) { isExit = true; exitPrice = curr.close; roi = ((exitPrice - position.entryPrice) / position.entryPrice) * 100; }
+                } else {
+                    if (curr.high >= position.slPrice) { isExit = true; exitPrice = position.slPrice; roi = ((position.entryPrice - exitPrice) / position.entryPrice) * 100; }
+                    else if (curr.close <= curr.middle) { isExit = true; exitPrice = curr.close; roi = ((position.entryPrice - exitPrice) / position.entryPrice) * 100; }
+                }
+                if (isExit) {
+                    events.push({ time: curr.time, timeframe, type: 'EXIT', direction: position.type, entryPrice: position.entryPrice, slPrice: position.slPrice, exitPrice, roi });
+                    position = null;
+                }
+            }
+        }
+        return events;
+    }
+    
+    async function refreshPeriodEvents(timeframe) {
+        try {
+            const limit = 250;
+            const url = `https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${timeframe}&limit=${limit}`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!data || data.length === 0) return [];
+            const klines = data.map(k => ({ time: Math.floor(k[0] / 1000), open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]) }));
+            const events = generateEventStreamFromClosedKlines(klines, timeframe);
+            periodActionsMap.set(timeframe, events);
+            return events;
+        } catch(e) { return []; }
+    }
+    
+    function updateAlertPanel(actions) {
+        const panel = document.getElementById('alertPanel');
+        if (!panel) return;
+        const newKeys = new Set(actions.map(a => `${a.time}_${a.type}_${a.direction}_${a.entryPrice || a.exitPrice || ''}_${a.timeframe}`));
+        let hasNew = false;
+        for(let key of newKeys) if(!prevAlertKeys.has(key)) { hasNew = true; break; }
+        if(hasNew && actions.length > 0 && soundEnabled) playNotificationBeep();
+        prevAlertKeys = newKeys;
+        panel.innerHTML = '';
+        if (!actions || actions.length === 0) {
+            panel.classList.add('empty');
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'alert-empty-text';
+            emptyDiv.innerHTML = '<span class="alert-empty-dot"></span> 暂无新信号 (收盘确认)';
+            panel.appendChild(emptyDiv);
+            return;
+        }
+        panel.classList.remove('empty');
+        for (let act of actions) {
+            const card = document.createElement('div');
+            card.className = 'alert-card-row';
+            let typeLabel = '', typeClass = '';
+            let directionText = act.direction === 'LONG' ? '做多' : '做空';
+            if (act.type === 'ENTER') {
+                typeLabel = `📈 入场 ${directionText}`;
+                typeClass = 'enter-' + (act.direction === 'LONG' ? 'long' : 'short');
+            } else {
+                let winFlag = (act.roi > 0) ? '✅ 止盈' : '⚠️ 止损';
+                typeLabel = `${winFlag} 平仓 ${directionText}`;
+                typeClass = 'exit-' + (act.direction === 'LONG' ? 'long' : 'short');
+            }
+            let detailHtml = '';
+            if (act.type === 'ENTER') {
+                detailHtml = `<div class="detail-item"><span class="detail-label">入场</span><span class="detail-value">$${act.entryPrice.toFixed(4)}</span></div>
+                              <div class="detail-item"><span class="detail-label">止损</span><span class="detail-value">$${act.slPrice.toFixed(4)}</span></div>`;
+            } else {
+                const roiAbs = Math.abs(act.roi).toFixed(2);
+                const profitClass = act.roi >= 0 ? 'profit-positive' : 'profit-negative';
+                const profitSymbol = act.roi >= 0 ? `+${roiAbs}%` : `-${roiAbs}%`;
+                detailHtml = `<div class="detail-item"><span class="detail-label">出场价</span><span class="detail-value">$${act.exitPrice.toFixed(4)}</span></div>
+                              <div class="detail-item"><span class="detail-label">盈亏</span><span class="profit-badge ${profitClass}">${profitSymbol}</span></div>`;
+            }
+            card.innerHTML = `<div class="alert-left"><span class="alert-badge-tf">${act.timeframe}</span><span class="alert-type-icon ${typeClass}">${typeLabel}</span></div>
+                              <div class="alert-details">${detailHtml}<span class="alert-time-small">${formatBeijingTime(act.time)}</span></div>`;
+            panel.appendChild(card);
+        }
+    }
+
+    async function refreshAllPeriodsEvents() {
+        if (refreshing) return;
+        refreshing = true;
+        try {
+            const promises = TIMEFRAMES.map(tf => refreshPeriodEvents(tf));
+            await Promise.all(promises);
+            let allEvents = [];
+            for (let [tf, evts] of periodActionsMap.entries()) for (let ev of evts) allEvents.push(ev);
+            allEvents.sort((a,b) => b.time - a.time);
+            allActionsCache = allEvents;
+            updateFilteredAlerts();
+        } catch(e) { console.error(e); }
+        finally { refreshing = false; }
+    }
+
+    // 交易日志 (基于收盘K线)
+    function buildTradesFromClosedKlines(klines) {
+        if (!klines || klines.length < 30) return [];
+        const closedKlines = klines.slice(0, -1);
+        if (closedKlines.length < 30) return [];
+        let closes = closedKlines.map(k => k.close);
+        let bollVals = [];
+        for (let i=0;i<closedKlines.length;i++) {
+            if(i>=19){
+                let slice=closes.slice(i-19,i+1), sma=slice.reduce((a,b)=>a+b,0)/20, varian=slice.reduce((s,v)=>s+Math.pow(v-sma,2),0)/20, std=Math.sqrt(varian);
+                bollVals.push({upper:sma+std*2, lower:sma-std*2, middle:sma, close:closedKlines[i].close, high:closedKlines[i].high, low:closedKlines[i].low, time:closedKlines[i].time});
+            } else bollVals.push(null);
+        }
+        let trades=[], pos=null;
+        for(let i=1;i<bollVals.length;i++){
+            let curr=bollVals[i], prev=bollVals[i-1];
+            if(!curr||!prev) continue;
+            if(!pos){
+                if(prev.close<=prev.lower && curr.close>curr.lower) { let nextOpen=(i+1<closedKlines.length)?closedKlines[i+1].open:curr.close; pos={type:'LONG',entryPrice:nextOpen,time:(i+1<closedKlines.length)?closedKlines[i+1].time:curr.time,slPrice:nextOpen*0.985};}
+                else if(prev.close>=prev.upper && curr.close<curr.upper) { let nextOpen=(i+1<closedKlines.length)?closedKlines[i+1].open:curr.close; pos={type:'SHORT',entryPrice:nextOpen,time:(i+1<closedKlines.length)?closedKlines[i+1].time:curr.time,slPrice:nextOpen*1.015};}
+            } else {
+                let closed=false, exitPrice=0, closedBySL=false;
+                if(pos.type==='LONG' && (curr.low<=pos.slPrice || curr.close>=curr.middle)) { closed=true; exitPrice=curr.low<=pos.slPrice?pos.slPrice:curr.close; closedBySL=curr.low<=pos.slPrice;}
+                else if(pos.type==='SHORT' && (curr.high>=pos.slPrice || curr.close<=curr.middle)) { closed=true; exitPrice=curr.high>=pos.slPrice?pos.slPrice:curr.close; closedBySL=curr.high>=pos.slPrice;}
+                if(closed){ trades.unshift({time:pos.time,type:pos.type,entryPrice:pos.entryPrice,exitPrice,slPrice:pos.slPrice,closedBySL,status:'CLOSED'}); pos=null;}
+            }
+        }
+        if(pos){ let livePrice=bollVals[bollVals.length-1]?.close||pos.entryPrice; trades.unshift({time:pos.time,type:pos.type,entryPrice:pos.entryPrice,exitPrice:livePrice,slPrice:pos.slPrice,closedBySL:false,status:'OPEN'});}
+        return trades;
+    }
+
+    async function refreshCurrentPeriodLog() {
+        try {
+            const url = `https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=250`;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!data) return;
+            const klines = data.map(k => ({ time: Math.floor(k[0]/1000), open: parseFloat(k[1]), high: parseFloat(k[2]), low: parseFloat(k[3]), close: parseFloat(k[4]) }));
+            const trades = buildTradesFromClosedKlines(klines);
+            const tbody = document.getElementById('strategyLogBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (!trades || trades.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无交易记录</td></tr>'; return; }
+            trades.slice(0, 15).forEach(trade => {
+                const timeStr = formatBeijingTime(trade.time);
+                let roi = trade.type === 'LONG' ? ((trade.exitPrice - trade.entryPrice) / trade.entryPrice) * 100 : ((trade.entryPrice - trade.exitPrice) / trade.entryPrice) * 100;
+                let roiClass = roi >= 0 ? 'positive' : 'negative';
+                let exitStyle = trade.status === 'OPEN' ? 'font-family:\'Courier New\'; color: var(--sub-text);' : 'font-family:\'Courier New\';';
+                let slStyle = trade.closedBySL ? 'color:#ef4444;font-weight:bold;' : 'font-family:\'Courier New\';';
+                tbody.innerHTML += `<tr>
+                    <td>${timeStr}</td>
+                    <td style="font-weight:bold;">${currentSymbol}</td>
+                    <td><span class="badge ${trade.type.toLowerCase()}">${trade.type}</span></td>
+                    <td style="font-family:'Courier New';">$${trade.entryPrice.toFixed(4)}</td>
+                    <td style="${exitStyle}">$${trade.exitPrice.toFixed(4)}</td>
+                    <td style="${slStyle}">$${trade.slPrice.toFixed(4)}</td>
+                    <td class="roi-val ${roiClass}">${(trade.status === 'OPEN' ? '~' : '') + roi.toFixed(2)}%</td>
+                    <td><span class="status-text">${trade.status}</span></td>
+                </tr>`;
+            });
+            document.getElementById('logTimeframeLabel').innerText = currentTimeframe;
+        } catch(e) { console.warn(e); }
+    }
+
+    async function onSymbolChanged() {
+        periodActionsMap.clear();
+        await refreshAllPeriodsEvents();
+        await refreshCurrentPeriodLog();
+        fetchHeaderData();
+        fetchFundingRate();
+        fetchKlineData();
+        fetchBollingerData();
+    }
+
+    // 图表相关
+    function initChart() {
+        const el = document.getElementById('tvChart'); if(!el) return;
+        chart = LightweightCharts.createChart(el, {
+            layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#111827' },
+            grid: { vertLines: { color: 'rgba(42,46,57,0.06)' }, horzLines: { color: 'rgba(42,46,57,0.06)' } },
+            rightPriceScale: { borderColor: 'rgba(229,231,235,1)' },
+            timeScale: { borderColor: 'rgba(229,231,235,1)', timeVisible: true, tickMarkFormatter: (time) => formatBeijingTime(time) },
+            handleScroll: false, handleScale: false,
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+        });
+        candleSeries = chart.addCandlestickSeries({ upColor: '#26a69a', downColor: '#ef5350', priceLineVisible: false, lastPriceVisible: false });
+        upperSeries = chart.addLineSeries({ color: 'rgba(33,150,243,0.6)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        lowerSeries = chart.addLineSeries({ color: 'rgba(33,150,243,0.6)', lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
+        middleSeries = chart.addLineSeries({ color: 'rgba(158,158,158,0.5)', lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false });
+        ma60Series = chart.addLineSeries({ color: '#FF6B6B', lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
+        new ResizeObserver(() => { chart?.applyOptions({ width: el.clientWidth, height: el.clientHeight }); setTimeout(() => chart?.timeScale().fitContent(), 0); }).observe(el);
+    }
+    
+    async function fetchKlineData() {
+        let limit=250, res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=${limit}`), data=await res.json();
+        if(!data) return;
+        let klines=data.map(k=>({time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4])}));
+        let closes=klines.map(k=>k.close), uppers=[], lowers=[], middles=[], ma60s=[];
+        for(let i=0;i<klines.length;i++){
+            if(i>=19){ let slice=closes.slice(i-19,i+1), sma=slice.reduce((a,b)=>a+b,0)/20, varian=slice.reduce((s,v)=>s+Math.pow(v-sma,2),0)/20, std=Math.sqrt(varian); uppers.push({time:klines[i].time,value:sma+std*2}); lowers.push({time:klines[i].time,value:sma-std*2}); middles.push({time:klines[i].time,value:sma}); }
+            if(i>=59){ let sum=0; for(let j=0;j<60;j++) sum+=closes[i-j]; ma60s.push({time:klines[i].time,value:sum/60}); }
+        }
+        candleSeries.setData(klines);
+        upperSeries.setData(uppers); lowerSeries.setData(lowers); middleSeries.setData(middles); ma60Series.setData(ma60s);
+        const events = generateEventStreamFromClosedKlines(klines, currentTimeframe);
+        let markers = [];
+        for (let ev of events) if (ev.type === 'ENTER') markers.push({ time: ev.time, position: ev.direction === 'LONG' ? 'belowBar' : 'aboveBar', color: ev.direction === 'LONG' ? '#10b981' : '#ef4444', shape: ev.direction === 'LONG' ? 'arrowUp' : 'arrowDown', text: ev.direction === 'LONG' ? 'B' : 'S' });
+        candleSeries.setMarkers(markers);
+        chart.timeScale().fitContent();
+    }
+    
+    // 修复1：价格同步（使用24小时ticker）
+    async function fetchHeaderData() {
+        try {
+            let r = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${currentSymbol}`);
+            let d = await r.json();
+            let cur = parseFloat(d.lastPrice);
+            let ch = parseFloat(d.priceChangePercent);
+            document.getElementById('currentPrice').innerText = '$' + cur.toFixed(2);
+            let chEl = document.getElementById('priceChange');
+            chEl.innerText = ch.toFixed(2) + '% (UTC)';
+            let cls = ch > 0 ? 'text-up' : (ch < 0 ? 'text-down' : 'text-neutral');
+            document.getElementById('currentPrice').className = cls;
+            chEl.className = cls;
+        } catch(e) {}
+    }
+    async function fetchFundingRate() { try { let r=await fetch(`https://fapi.binance.com/fapi/v1/premiumIndex?symbol=${currentSymbol}`),d=await r.json(); document.getElementById('fundingRate').innerText=(parseFloat(d.lastFundingRate)*100).toFixed(4)+'%'; } catch(e){} }
+    
+    // 修复3：布林带刷新不闪白
+    async function fetchBollingerData() {
+        let grid = document.getElementById('bollingerGrid');
+        if (!grid) return;
+        let promises = BOLLINGER_TFS.map(async tf => {
+            try {
+                let res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${tf}&limit=50`);
+                let data = await res.json();
+                if (!data || data.length < 20) return null;
+                let closes = data.map(k => parseFloat(k[4]));
+                let latestClose = closes[closes.length - 1];
+                let slice = closes.slice(-20);
+                let sma = slice.reduce((a, b) => a + b, 0) / 20;
+                let variance = 0;
+                for (let v of slice) variance += Math.pow(v - sma, 2);
+                variance /= 20;
+                let std = Math.sqrt(variance);
+                let upper = sma + std * 2;
+                let lower = sma - std * 2;
+                let width = ((upper - lower) / sma) * 100;
+                let percentage = ((latestClose - lower) / (upper - lower)) * 100;
+                if (isNaN(percentage)) percentage = 50;
+                percentage = Math.min(100, Math.max(0, percentage));
+                return { tf, upper, lower, percentage, width, squeeze: width < 5 };
+            } catch (e) { return null; }
+        });
+        let results = await Promise.all(promises);
+        if (results.some(item => item !== null)) {
+            grid.innerHTML = '';
+            for (let item of results) {
+                if (!item) continue;
+                let card = document.createElement('div');
+                card.className = `bollinger-card ${currentTimeframe === item.tf ? 'active' : ''}`;
+                card.onclick = async () => {
+                    if (currentTimeframe !== item.tf) {
+                        currentTimeframe = item.tf;
+                        document.getElementById('displayTimeframe').innerText = item.tf;
+                        await fetchKlineData();
+                        await fetchBollingerData();
+                        await refreshCurrentPeriodLog();
+                    }
+                };
+                let statusText = item.squeeze ? 'Squeeze' : 'Hold';
+                let statusClass = item.squeeze ? 'squeeze' : 'hold';
+                let barColor = item.percentage > 80 ? '#ef4444' : (item.percentage < 20 ? '#10b981' : '#3b82f6');
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="period">${item.tf}</span>
+                        <span class="status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="percentage-row">
+                        <span class="percentage-label">%B</span>
+                        <span class="percentage-value">${item.percentage.toFixed(2)}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${item.percentage}%; background-color:${barColor};"></div>
+                    </div>
+                    <div class="band-values">
+                        <div class="band-row">
+                            <span class="band-label upper">H</span>
+                            <span class="band-value">${item.upper.toFixed(2)}</span>
+                        </div>
+                        <div class="band-row">
+                            <span class="band-label lower">L</span>
+                            <span class="band-value">${item.lower.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    <div class="width-info">Width: ${item.width.toFixed(1)}%</div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+    }
+
+    const hotSymbols = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT','XRPUSDT','ADAUSDT','DOGEUSDT','AVAXUSDT','DOTUSDT','LINKUSDT','MATICUSDT','SHIBUSDT','LTCUSDT','UNIUSDT','ATOMUSDT','ETCUSDT','XLMUSDT','FILUSDT','TRXUSDT','APTUSDT','ARBUSDT','OPUSDT','NEARUSDT','INJUSDT','TIAUSDT','SEIUSDT','SUIUSDT','PEPEUSDT','WIFUSDT'];
+    function populateSymbolSelect() { let sel=document.getElementById('symbolSelect'); sel.innerHTML=''; hotSymbols.forEach(sym=>{let opt=document.createElement('option');opt.value=sym;opt.textContent=sym.replace('USDT','/USDT');if(sym===currentSymbol)opt.selected=true;sel.appendChild(opt);}); sel.addEventListener('change', async function(){currentSymbol=this.value;document.getElementById('symbolName').innerText=currentSymbol;await onSymbolChanged();}); }
+
+    document.addEventListener('DOMContentLoaded', async()=>{ 
+        loadTheme(); 
+        loadSoundState(); 
+        loadPeriodReminderSettings(); 
+        populateSymbolSelect(); 
+        initChart(); 
+        setupDropdown(); 
+        buildPeriodReminderUI(); 
+        // 修复2：将抽屉面板移入“周期提醒设置”菜单项内部，使其在箭头右侧展开且完全显示
+        const drawerOverlayEl = document.getElementById('drawerOverlay');
+        const periodItem = document.getElementById('periodReminderItem');
+        if (drawerOverlayEl && periodItem) {
+            periodItem.appendChild(drawerOverlayEl);
+        }
+        await refreshAllPeriodsEvents(); 
+        await refreshCurrentPeriodLog(); 
+        setInterval(()=>refreshAllPeriodsEvents(), 60000); 
+        setInterval(()=>refreshCurrentPeriodLog(), 20000); 
+        setInterval(fetchHeaderData, 4000); 
+        setInterval(fetchFundingRate, 12000); 
+        setInterval(fetchKlineData, 10000); 
+        setInterval(fetchBollingerData, 30000); 
+        fetchHeaderData(); 
+        fetchFundingRate(); 
+        fetchKlineData(); 
+        fetchBollingerData(); 
+    });
+</script>
+</body>
+</html>
