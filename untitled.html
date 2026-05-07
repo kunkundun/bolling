@@ -1006,21 +1006,23 @@
     }
     
     async function fetchKlineData() {
-        let limit=250, res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=${limit}`), data=await res.json();
-        if(!data) return;
-        let klines=data.map(k=>({time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4])}));
-        let closes=klines.map(k=>k.close), uppers=[], lowers=[], middles=[], ma60s=[];
-        for(let i=0;i<klines.length;i++){
-            if(i>=19){ let slice=closes.slice(i-19,i+1), sma=slice.reduce((a,b)=>a+b,0)/20, varian=slice.reduce((s,v)=>s+Math.pow(v-sma,2),0)/20, std=Math.sqrt(varian); uppers.push({time:klines[i].time,value:sma+std*2}); lowers.push({time:klines[i].time,value:sma-std*2}); middles.push({time:klines[i].time,value:sma}); }
-            if(i>=59){ let sum=0; for(let j=0;j<60;j++) sum+=closes[i-j]; ma60s.push({time:klines[i].time,value:sum/60}); }
-        }
-        candleSeries.setData(klines);
-        upperSeries.setData(uppers); lowerSeries.setData(lowers); middleSeries.setData(middles); ma60Series.setData(ma60s);
-        const events = generateEventStreamFromClosedKlines(klines, currentTimeframe);
-        let markers = [];
-        for (let ev of events) if (ev.type === 'ENTER') markers.push({ time: ev.time, position: ev.direction === 'LONG' ? 'belowBar' : 'aboveBar', color: ev.direction === 'LONG' ? '#10b981' : '#ef4444', shape: ev.direction === 'LONG' ? 'arrowUp' : 'arrowDown', text: ev.direction === 'LONG' ? 'B' : 'S' });
-        candleSeries.setMarkers(markers);
-        chart.timeScale().fitContent();
+        try {
+            let limit=250, res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentTimeframe}&limit=${limit}`), data=await res.json();
+            if(!data) return;
+            let klines=data.map(k=>({time:Math.floor(k[0]/1000),open:parseFloat(k[1]),high:parseFloat(k[2]),low:parseFloat(k[3]),close:parseFloat(k[4])}));
+            let closes=klines.map(k=>k.close), uppers=[], lowers=[], middles=[], ma60s=[];
+            for(let i=0;i<klines.length;i++){
+                if(i>=19){ let slice=closes.slice(i-19,i+1), sma=slice.reduce((a,b)=>a+b,0)/20, varian=slice.reduce((s,v)=>s+Math.pow(v-sma,2),0)/20, std=Math.sqrt(varian); uppers.push({time:klines[i].time,value:sma+std*2}); lowers.push({time:klines[i].time,value:sma-std*2}); middles.push({time:klines[i].time,value:sma}); }
+                if(i>=59){ let sum=0; for(let j=0;j<60;j++) sum+=closes[i-j]; ma60s.push({time:klines[i].time,value:sum/60}); }
+            }
+            candleSeries.setData(klines);
+            upperSeries.setData(uppers); lowerSeries.setData(lowers); middleSeries.setData(middles); ma60Series.setData(ma60s);
+            const events = generateEventStreamFromClosedKlines(klines, currentTimeframe);
+            let markers = [];
+            for (let ev of events) if (ev.type === 'ENTER') markers.push({ time: ev.time, position: ev.direction === 'LONG' ? 'belowBar' : 'aboveBar', color: ev.direction === 'LONG' ? '#10b981' : '#ef4444', shape: ev.direction === 'LONG' ? 'arrowUp' : 'arrowDown', text: ev.direction === 'LONG' ? 'B' : 'S' });
+            candleSeries.setMarkers(markers);
+            chart.timeScale().fitContent();
+        } catch(e) {}
     }
     
     // 修复1：价格同步（使用24小时ticker）
