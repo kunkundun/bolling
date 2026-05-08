@@ -767,10 +767,11 @@
 
     function formatBeijingTime(timestamp) {
         let d = new Date(timestamp * 1000);
-        let beijingOffset = 8 * 60;
-        let localOffset = d.getTimezoneOffset();
-        let beijingTime = new Date(d.getTime() + (beijingOffset + localOffset) * 60000);
-        return `${beijingTime.getMonth()+1}/${beijingTime.getDate()} ${beijingTime.getHours().toString().padStart(2,'0')}:${beijingTime.getMinutes().toString().padStart(2,'0')}`;
+        let month = d.toLocaleString('en-US', { month: 'numeric', timeZone: 'Asia/Shanghai' });
+        let day = d.toLocaleString('en-US', { day: 'numeric', timeZone: 'Asia/Shanghai' });
+        let hour = d.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: 'Asia/Shanghai' });
+        let minute = d.toLocaleString('en-US', { minute: '2-digit', timeZone: 'Asia/Shanghai' });
+        return `${month}/${day} ${hour}:${minute}`;
     }
 
     // 核心策略 (基于收盘K线)
